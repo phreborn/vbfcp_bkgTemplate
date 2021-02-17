@@ -115,8 +115,8 @@ void invCut_hist(){
 
   //TFile *f_data = new TFile("/scratchfs/bes/chenhr/atlaswork/VBF_CP/ntuples/data17/data17_slim.root","read");
   //TFile *f_yy = new TFile("/scratchfs/bes/chenhr/atlaswork/VBF_CP/ntuples/mc16d/mc16d.364352.diphoton_AF2_slim.root","read");
-  TFile *f_data = new TFile("h025_data.root","read");
-  TFile *f_yy = new TFile("364352.diphoton_AF2_slim.root","read");
+  TFile *f_data = new TFile("h026_data.root","read");
+  TFile *f_yy = new TFile("h026_364352.diphoton_AF2_slim.root","read");
 
   TTree *t_data = (TTree*) f_data->Get("output");
   TTree *t_yy = (TTree*) f_yy->Get("output");
