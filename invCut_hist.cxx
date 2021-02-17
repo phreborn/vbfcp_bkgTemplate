@@ -187,7 +187,7 @@ void invCut_hist(){
     for (int i = 0; i < n_data; i++){
       t_data->GetEntry(i);
       if(oo1 < b_l || oo1 >= b_r) continue;
-      if (! ((!passPID_y1&&!passIso_y1&&passPID_y2&&passIso_y2)||(!passPID_y2&&!passIso_y2&&passPID_y1&&passPID_y1))) continue;
+      if (! ((!passPID_y1&&!passIso_y1&&passPID_y2&&passIso_y2)||(!passPID_y2&&!passIso_y2&&passPID_y1&&passIso_y1))) continue;
       h_data_invID_invIso->Fill(m_yy/1000);
     }
   
@@ -210,7 +210,7 @@ void invCut_hist(){
     for(int i = 0; i < n_yy; i++){
       t_yy->GetEntry(i);
       if(oo1 < b_l || oo1 >= b_r) continue;
-      if(! ((!passPID_y1&&!passIso_y1&&passPID_y2&&passIso_y2)||(!passPID_y2&&!passIso_y2&&passPID_y1&&passPID_y1))) continue;
+      if(! ((!passPID_y1&&!passIso_y1&&passPID_y2&&passIso_y2)||(!passPID_y2&&!passIso_y2&&passPID_y1&&passIso_y1))) continue;
       h_yy_invID_invIso->Fill(m_yy/1000,weight);
     }
   
