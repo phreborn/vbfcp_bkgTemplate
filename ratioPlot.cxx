@@ -1,3 +1,5 @@
+#include "utils.h"
+
 #ifdef __CLING__
 #include "/scratchfs/atlas/chenhr/atlaswork/ATLAS_style/atlasrootstyle/AtlasLabels.C"
 #include "/scratchfs/atlas/chenhr/atlaswork/ATLAS_style/atlasrootstyle/AtlasUtils.C"
@@ -8,6 +10,10 @@ void ratioPlot(){
    TString CR = "invID_invIso";
    //TString CR = "invID";
    TString name = dirname+CR+"_uncertainty";
+
+  char *cf_cats = (char*)"cats.cfg";
+  map<TString, string> catCuts;
+  getCatCuts(cf_cats, catCuts); for(auto c : catCuts) cout<<c.first<<c.second<<endl;
 
    SetAtlasStyle();
    gStyle->SetOptStat(0);
@@ -24,13 +30,18 @@ void ratioPlot(){
 
    TFile *f_in = new TFile("template.root","read");
 
-   for(auto bin : bins){
+   //for(auto bin : bins){
+   for(auto cat : catCuts){
 
-     cout<<"========  "<<bin.first<<"  ========"<<endl;
+     //cout<<"========  "<<bin.first<<"  ========"<<endl;
+     cout<<"========  "<<cat.first<<"  ========"<<endl;
 
-     TH1F *h1 = (TH1F*) f_in->Get("data_nom_"+bin.first);
-     TH1F *h2 = (TH1F*) f_in->Get("template_uncer_"+bin.first);
-     TH1F *h4 = (TH1F*) f_in->Get("yj_component_"+bin.first);
+     //TH1F *h1 = (TH1F*) f_in->Get("data_nom_"+bin.first);
+     //TH1F *h2 = (TH1F*) f_in->Get("template_uncer_"+bin.first);
+     //TH1F *h4 = (TH1F*) f_in->Get("yj_component_"+bin.first);
+     TH1F *h1 = (TH1F*) f_in->Get("data_nom_"+cat.first);
+     TH1F *h2 = (TH1F*) f_in->Get("template_uncer_"+cat.first);
+     TH1F *h4 = (TH1F*) f_in->Get("yj_component_"+cat.first);
 
      TH1F *h2_noErr = (TH1F*) h2->Clone(Form("%s_noErr", h2->GetName()));
      for(int i=1; i<=h2_noErr->GetNbinsX(); i++){
@@ -122,7 +133,8 @@ void ratioPlot(){
      h3->GetXaxis()->SetLabelFont(43); // Absolute font size in pixel (precision 3)
      h3->GetXaxis()->SetLabelSize(15);
   
-     c->SaveAs(name+"_"+bin.first+".png");
+     //c->SaveAs(name+"_"+bin.first+".png");
+     c->SaveAs(name+"_"+cat.first+".png");
 
      delete lg;
      delete axis;

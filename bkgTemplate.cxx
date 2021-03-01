@@ -3,6 +3,8 @@
 #include "/scratchfs/atlas/chenhr/atlaswork/ATLAS_style/atlasrootstyle/AtlasUtils.C"
 #endif
 
+#include "utils.h"
+
 bool getFrac(TString file, TString bin, double &frac, double &uncer){
   ifstream inf;
   inf.open(file.Data());
@@ -24,6 +26,11 @@ bool getFrac(TString file, TString bin, double &frac, double &uncer){
 
 void ratioPlot(TH1F *h1, TH1F *h2, TF1 *func_nom, TF1 *func_alt, TH1F *h4, TString name){
    TCanvas *c = new TCanvas("c", "canvas", 800, 800);
+
+   TH1F *h2_noErr = (TH1F*) h2->Clone(Form("%s_noErr", h2->GetName()));
+   for(int i=1; i<=h2_noErr->GetNbinsX(); i++){
+     h2_noErr->SetBinError(i, 0.);
+   }
 
    TPad *pad1 = new TPad("pad1", "pad1", 0, 0.3, 1, 1.0);
    pad1->SetBottomMargin(0); // Upper and lower plot are joined
@@ -66,7 +73,7 @@ void ratioPlot(TH1F *h1, TH1F *h2, TF1 *func_nom, TF1 *func_alt, TH1F *h4, TStri
    h3->SetMaximum(1.5); // .. range
    h3->Sumw2();
    h3->SetStats(0);      // No statistics on lower plot
-   h3->Divide(h2);
+   h3->Divide(h2_noErr);
    h3->SetMarkerStyle(20);
    h3->Draw("ep");       // Draw the ratio plot
 
@@ -82,7 +89,7 @@ void ratioPlot(TH1F *h1, TH1F *h2, TF1 *func_nom, TF1 *func_alt, TH1F *h4, TStri
    TH1F *h5 = (TH1F*)h4->Clone("h5");
    h5->SetLineColor(kBlack);
    h5->Sumw2();
-   h5->Divide(h2);
+   h5->Divide(h2_noErr);
    h5->SetMarkerStyle(24);
    h5->Draw("same");
 
@@ -162,6 +169,10 @@ void bkgTemplate(){
 
   int nBins = 110;
 
+  char *cf_cats = (char*)"cats.cfg";
+  map<TString, string> catCuts;
+  getCatCuts(cf_cats, catCuts); for(auto c : catCuts) cout<<c.first<<c.second<<endl;
+
   map<TString, pair<float, float>> bins;
   bins["OOincl"] = make_pair(-999999999, 999999999);
   bins["b1"] = make_pair(-999999999, -2);
@@ -173,6 +184,25 @@ void bkgTemplate(){
 
   TFile *f_out = new TFile("template.root", "recreate");
 
+  string config = "config";
+  string blindCut = "";
+  readConfigFile(config.data(), "blindSel", blindCut);
+  string TTCut = "";
+  readConfigFile(config.data(), "TTSel", TTCut);
+  string invIDCut = "";
+  readConfigFile(config.data(), "invID", invIDCut);
+  string invID_invIsoCut = "";
+  readConfigFile(config.data(), "invID_invIso", invID_invIsoCut);
+
+  TChain ch_data("output", "output");
+  TChain ch_yy("output", "output");
+
+  ch_data.Add("h026_data.root");
+  ch_yy.Add("h026_364352.diphoton_AF2_slim.root");
+
+  ROOT::RDataFrame df_data(ch_data, {"m_yy"});
+  ROOT::RDataFrame df_yy(ch_yy, {"m_yy"});
+
   //TFile *f_data = new TFile("/scratchfs/bes/chenhr/atlaswork/VBF_CP/ntuples/data17/data17_slim.root","read");
   //TFile *f_yy = new TFile("/scratchfs/bes/chenhr/atlaswork/VBF_CP/ntuples/mc16d/mc16d.364352.diphoton_AF2_slim.root","read");
   TFile *f_data = new TFile("h026_data.root","read");
@@ -182,7 +212,7 @@ void bkgTemplate(){
   TTree *t_yy = (TTree*) f_yy->Get("output");
 
   Int_t N_j_30,N_photon,cutflow,catCoup_XGBoost_ttH;
-  Float_t m_yy,pT_y1,pT_y2,m_jj_30,DeltaEta_jj,Zepp,oo1,oo2,WeightDtilde1,WeightDtilde2,weight,xsec_kF_eff,total_weights, wt;
+  Float_t m_yy,pT_y1,pT_y2,m_jj_30,DeltaEta_jj,Zepp,oo1,oo2,WeightDtilde1,WeightDtilde2,weight,xsec_kF_eff,total_weights;
   bool isDalitz,passBasic,passPresel,passTrigMatch,passRelPt,passMass,passIso,passPID,isPassed,passPID_y1,passPID_y2,passIso_y1,passIso_y2;
 
   t_data->SetBranchAddress("passPID_y1", &passPID_y1);
@@ -213,68 +243,116 @@ void bkgTemplate(){
   t_yy->SetBranchAddress("oo2", &oo2);
   t_yy->SetBranchAddress("wt", &weight);
 
-  for(auto bin : bins){
+  //for(auto bin : bins){
+  for(auto cat : catCuts){
 
-    cout<<"========  "<<bin.first<<"  ========"<<endl;
+    //cout<<"========  "<<bin.first<<"  ========"<<endl;
+    cout<<"========  "<<cat.first<<"  ========"<<endl;
 
-    float b_l = bin.second.first;
-    float b_r = bin.second.second;
+    //float b_l = bin.second.first;
+    //float b_r = bin.second.second;
+    float b_l = bins[cat.first].first;
+    float b_r = bins[cat.first].second;
 
-    TH1F *h_data_nom = new TH1F("data_nom_"+bin.first, "", nBins, 105,160);
+    //TH1F *h_data_nom = new TH1F("data_nom_"+bin.first, "", nBins, 105,160);
+    TH1F *h_data_nom = new TH1F("data_nom_"+cat.first, "", nBins, 105,160);
     TH1F *h_data_invID = new TH1F("data_invID", "", nBins, 105,160);
     TH1F *h_data_invID_invIso = new TH1F("data_invID_invIso", "", nBins, 105,160);
   
     TH1F *h_yy_nom = new TH1F("yy_nom", "", nBins, 105,160);
     TH1F *h_yy_invID = new TH1F("yy_invID", "", nBins, 105,160);
     TH1F *h_yy_invID_invIso = new TH1F("yy_invID_invIso", "", nBins, 105,160);
+
+    TH1F *th_data_nom = new TH1F("tdata_nom_"+cat.first, "", nBins, 105,160);
+    TH1F *th_data_invID = new TH1F("tdata_invID", "", nBins, 105,160);
+    TH1F *th_data_invID_invIso = new TH1F("tdata_invID_invIso", "", nBins, 105,160);
+    TH1F *th_yy_nom = new TH1F("tyy_nom", "", nBins, 105,160);
+    TH1F *th_yy_invID = new TH1F("tyy_invID", "", nBins, 105,160);
+    TH1F *th_yy_invID_invIso = new TH1F("tyy_invID_invIso", "", nBins, 105,160);
   
     // filling data
     int n_data = t_data->GetEntries();
+
+    //string catCut = catCuts[bin.first];
+    string catCut = cat.second;
+
+    string cat_TT = "";
+    cat_TT = Form("%s && %s", catCut.data(), TTCut.data()); cout<<"cat_TT: "<<cat_TT<<endl;
+
+    string cat_invID = "";
+    cat_invID = Form("%s && %s", catCut.data(), invIDCut.data()); cout<<"cat_invID: "<<cat_invID<<endl;
+
+    string cat_invID_invIso = "";
+    cat_invID_invIso = Form("%s && %s", catCut.data(), invID_invIsoCut.data()); cout<<"cat_invID_invIso: "<<cat_invID_invIso<<endl;
+
+    df_data.Filter(cat_TT).Filter(blindCut).Foreach([&h_data_nom](float m_yy){ h_data_nom->Fill(m_yy/1000); }, {"m_yy"});
+    TH1F * oh_data_nom = (TH1F*) h_data_nom->Clone("odata_nom");
+
+    df_data.Filter(cat_invID).Foreach([&h_data_invID](float m_yy){ h_data_invID->Fill(m_yy/1000); }, {"m_yy"});
+    TH1F * oh_data_invID = (TH1F*) h_data_invID->Clone("odata_invID");
+
+    df_data.Filter(cat_invID_invIso).Foreach([&h_data_invID_invIso](float m_yy){ h_data_invID_invIso->Fill(m_yy/1000); }, {"m_yy"});
+    TH1F * oh_data_invID_invIso = (TH1F*) h_data_invID_invIso->Clone("odata_invID_invIso");
   
     for (int i = 0; i < n_data; i++){
       t_data->GetEntry(i);
       if(oo1 < b_l || oo1 >= b_r) continue;
       if (! isPassed) continue;
       if (m_yy/1000>120&&m_yy/1000<130) continue;
-      h_data_nom->Fill(m_yy/1000); 
+      //h_data_nom->Fill(m_yy/1000); 
+      th_data_nom->Fill(m_yy/1000); 
     }
-  
+
     for (int i = 0; i < n_data; i++){
       t_data->GetEntry(i);
       if(oo1 < b_l || oo1 >= b_r) continue;
       if (! (((!passPID_y1&&passPID_y2)||(passPID_y1&&!passPID_y2))&&passIso)) continue;
-      h_data_invID->Fill(m_yy/1000); 
+      //h_data_invID->Fill(m_yy/1000); 
+      th_data_invID->Fill(m_yy/1000); 
     }
   
     for (int i = 0; i < n_data; i++){
       t_data->GetEntry(i);
       if(oo1 < b_l || oo1 >= b_r) continue;
       if (! ((!passPID_y1&&!passIso_y1&&passPID_y2&&passIso_y2)||(!passPID_y2&&!passIso_y2&&passPID_y1&&passIso_y1))) continue;
-      h_data_invID_invIso->Fill(m_yy/1000);
+      //h_data_invID_invIso->Fill(m_yy/1000);
+      th_data_invID_invIso->Fill(m_yy/1000);
     }
   
     // filling MC yy
     int n_yy = t_yy->GetEntries();
+
+    df_yy.Filter(cat_TT).Foreach([&h_yy_nom](float m_yy, float wt){ h_yy_nom->Fill(m_yy/1000, wt); }, {"m_yy", "wt"});
+    TH1F * oh_yy_nom = (TH1F*) h_yy_nom->Clone("oyy_nom");
+
+    df_yy.Filter(cat_invID).Foreach([&h_yy_invID](float m_yy, float wt){ h_yy_invID->Fill(m_yy/1000, wt); }, {"m_yy", "wt"});
+    TH1F * oh_yy_invID = (TH1F*) h_yy_invID->Clone("oyy_invID");
+
+    df_yy.Filter(cat_invID_invIso).Foreach([&h_yy_invID_invIso](float m_yy, float wt){ h_yy_invID_invIso->Fill(m_yy/1000, wt); }, {"m_yy", "wt"}); cout<<"df h_yy_invID_invIso: "<<h_yy_invID_invIso->Integral()<<endl;
+    TH1F * oh_yy_invID_invIso = (TH1F*) h_yy_invID_invIso->Clone("oyy_invID_invIso");
   
     for(int i = 0; i < n_yy; i++){
       t_yy->GetEntry(i);
       if(oo1 < b_l || oo1 >= b_r) continue;
       if(!isPassed) continue;
-      h_yy_nom->Fill(m_yy/1000,weight);
+      //h_yy_nom->Fill(m_yy/1000,weight);
+      th_yy_nom->Fill(m_yy/1000,weight);
     }
     
     for(int i = 0; i < n_yy; i++){
       t_yy->GetEntry(i);
       if(oo1 < b_l || oo1 >= b_r) continue;
       if(! (((!passPID_y1&&passPID_y2)||(passPID_y1&&!passPID_y2))&&passIso)) continue;
-      h_yy_invID->Fill(m_yy/1000,weight);
+      //h_yy_invID->Fill(m_yy/1000,weight);
+      th_yy_invID->Fill(m_yy/1000,weight);
     }
   
     for(int i = 0; i < n_yy; i++){
       t_yy->GetEntry(i);
       if(oo1 < b_l || oo1 >= b_r) continue;
-      if(! ((!passPID_y1&&!passIso_y1&&passPID_y2&&passIso_y2)||(!passPID_y2&&!passIso_y2&&passPID_y1&&passPID_y1))) continue;
-      h_yy_invID_invIso->Fill(m_yy/1000,weight);
+      if(! ((!passPID_y1&&!passIso_y1&&passPID_y2&&passIso_y2)||(!passPID_y2&&!passIso_y2&&passPID_y1&&passIso_y1))) continue;
+      //h_yy_invID_invIso->Fill(m_yy/1000,weight);
+      th_yy_invID_invIso->Fill(m_yy/1000,weight);
     }
   
     //h_data_invID->Sumw2();
@@ -310,7 +388,8 @@ void bkgTemplate(){
     TH1F *h_yj_invID_clone = (TH1F*) h_yj_invID->Clone("yj_invID_clone");
     TH1F *h_yy_nom_clone = (TH1F*) h_yy_nom->Clone("yy_nom_clone");
     TH1F *h_yj_invID_invIso_clone = (TH1F*) h_yj_invID_invIso->Clone("yj_invID_invIso_clone");
-    ratioPlot(h_yj_invID_clone, h_yy_nom_clone, poly2, poly1, h_yj_invID_invIso_clone, dirname+"invID_invIso_smooth_ratio_"+bin.first); // draw and fit
+    //ratioPlot(h_yj_invID_clone, h_yy_nom_clone, poly2, poly1, h_yj_invID_invIso_clone, dirname+"invID_invIso_smooth_ratio_"+bin.first); // draw and fit
+    ratioPlot(h_yj_invID_clone, h_yy_nom_clone, poly2, poly1, h_yj_invID_invIso_clone, dirname+"invID_invIso_smooth_ratio_"+cat.first); // draw and fit
     //ratioPlot(h_yj_invID_clone, h_yy_nom_clone, poly2, poly1, h_yj_invID_invIso_clone, dirname+"invID_smooth_ratio_"+bin.first); // draw and fit
 //    ratioPlot(h_yj_invID_invIso_clone, h_yy_nom_clone, poly2, poly1, h_yj_invID_clone, dirname+"invID_invIso_smooth_ratio_"+bin.first); // draw and fit
   
@@ -352,8 +431,10 @@ void bkgTemplate(){
     double frac_yy = -1.;
     double uncer = -1.;
 
-    if(!getFrac(fracfile, bin.first, frac_yy, uncer)){
-      cout<<"WARNING!!! can't get fraction of bin: "<<bin.first<<endl;
+    //if(!getFrac(fracfile, bin.first, frac_yy, uncer)){
+    if(!getFrac(fracfile, cat.first, frac_yy, uncer)){
+      //cout<<"WARNING!!! can't get fraction of bin: "<<bin.first<<endl;
+      cout<<"WARNING!!! can't get fraction of cat: "<<cat.first<<endl;
     }
 
     cout<<"yy fraction from 2x2D sideband: "<<frac_yy<<" +- "<<uncer<<endl;
@@ -368,28 +449,32 @@ void bkgTemplate(){
   
     double n_SB_data = h_data_nom->Integral(); // number of sideband data
   
-    TH1F *h_template = (TH1F*)h_yy_nom->Clone("bkg_template_"+bin.first);
+    //TH1F *h_template = (TH1F*)h_yy_nom->Clone("bkg_template_"+bin.first);
+    TH1F *h_template = (TH1F*)h_yy_nom->Clone("bkg_template_"+cat.first);
     h_template->Add(h_yj_reweight, frac_yj_yy); // 1*yy_shape + (frac_yj/frac_yy)*yj_shape
     h_template->Scale(1./h_template->Integral()); // template shape
 
     double frac_SB_yy = 1-h_template->Integral(h_template->GetXaxis()->FindBin(120),h_template->GetXaxis()->FindBin(130));cout<<"nom/2nd frac SB yy:"<<frac_SB_yy<<endl;
     h_template->Scale(n_SB_data/frac_SB_yy); // template normalized to sideband data
   
-    TH1F *h_template_pol1 = (TH1F*)h_yy_nom->Clone("bkg_template_pol1_"+bin.first);
+    //TH1F *h_template_pol1 = (TH1F*)h_yy_nom->Clone("bkg_template_pol1_"+bin.first);
+    TH1F *h_template_pol1 = (TH1F*)h_yy_nom->Clone("bkg_template_pol1_"+cat.first);
     h_template_pol1->Add(h_yj_reweight_pol1, frac_yj_yy);
     h_template_pol1->Scale(1./h_template_pol1->Integral()); // smoothing func variated template
   
     double frac_SB_yy_pol1 = 1-h_template_pol1->Integral(h_template_pol1->GetXaxis()->FindBin(120),h_template_pol1->GetXaxis()->FindBin(130));cout<<"poly1 frac SB yy:"<<frac_SB_yy_pol1<<endl;
     h_template_pol1->Scale(n_SB_data/frac_SB_yy_pol1);
   
-    TH1F *h_template_u = (TH1F*)h_yy_nom->Clone("bkg_template_u_"+bin.first);
+    //TH1F *h_template_u = (TH1F*)h_yy_nom->Clone("bkg_template_u_"+bin.first);
+    TH1F *h_template_u = (TH1F*)h_yy_nom->Clone("bkg_template_u_"+cat.first);
     h_template_u->Add(h_yj_reweight, frac_yj_yy_u);
     h_template_u->Scale(1./h_template_u->Integral()); // up yy fraction variated template
   
     double frac_SB_yy_u = 1-h_template_u->Integral(h_template_u->GetXaxis()->FindBin(120),h_template_u->GetXaxis()->FindBin(130));cout<<"up frac SB yy:"<<frac_SB_yy_u<<endl;
     h_template_u->Scale(n_SB_data/frac_SB_yy_u);
   
-    TH1F *h_template_d = (TH1F*)h_yy_nom->Clone("bkg_template_d_"+bin.first);
+    //TH1F *h_template_d = (TH1F*)h_yy_nom->Clone("bkg_template_d_"+bin.first);
+    TH1F *h_template_d = (TH1F*)h_yy_nom->Clone("bkg_template_d_"+cat.first);
     h_template_d->Add(h_yj_reweight, frac_yj_yy_d);
     h_template_d->Scale(1./h_template_d->Integral()); // down yy fraction variated template
   
@@ -402,7 +487,8 @@ void bkgTemplate(){
     }
   
     // all uncertainty: stat, frac_yy, smoothing
-    TH1F *h_uncer = (TH1F*) h_template->Clone("template_uncer_"+bin.first);
+    //TH1F *h_uncer = (TH1F*) h_template->Clone("template_uncer_"+bin.first);
+    TH1F *h_uncer = (TH1F*) h_template->Clone("template_uncer_"+cat.first);
   
     for(int i = 1; i < nBins+1; i++){
       double uncer_stat = h_template->GetBinError(i); //cout<<"uncer stat: "<<uncer_stat<<endl;
@@ -419,7 +505,8 @@ void bkgTemplate(){
       //h_uncer->SetBinError(i, h_template->GetBinContent(i)*0.3);
     }
   
-    TH1F *h_yj = (TH1F*) h_yj_reweight->Clone("yj_component_"+bin.first);
+    //TH1F *h_yj = (TH1F*) h_yj_reweight->Clone("yj_component_"+bin.first);
+    TH1F *h_yj = (TH1F*) h_yj_reweight->Clone("yj_component_"+cat.first);
     h_yj->Scale((1-frac_yy)*n_SB_data/frac_SB_yy); // frac_yj*h_template->Integral()
   
     h_data_nom->Draw("ep");
@@ -450,6 +537,24 @@ void bkgTemplate(){
     h_template_d->Write();
     h_uncer->Write();
     h_yj->Write();
+
+    TFile * tf = new TFile("testfile_"+cat.first+".root", "recreate");
+    tf->cd();
+    //h_yy_invID->Write();
+    //h_yy_invID_invIso->Write();
+    oh_data_nom->Write();
+    oh_data_invID->Write();
+    oh_data_invID_invIso->Write();
+    oh_yy_nom->Write();
+    oh_yy_invID->Write();
+    oh_yy_invID_invIso->Write();
+
+    th_data_nom->Write();
+    th_data_invID->Write();
+    th_data_invID_invIso->Write();
+    th_yy_nom->Write();
+    th_yy_invID->Write();
+    th_yy_invID_invIso->Write();
 
     delete h_data_nom;
     delete h_data_invID;
