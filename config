@@ -1,0 +1,6 @@
+blindSel: (m_yy/1000<120 || m_yy/1000>130)
+
+TTSel: isPassed
+
+invID: ((!passPID_y1&&passPID_y2)||(passPID_y1&&!passPID_y2))&&passIso
+invID_invIso: ((!passPID_y1&&!passIso_y1 && passPID_y2&&passIso_y2) || (!passPID_y2&&!passIso_y2 && passPID_y1&&passIso_y1))
