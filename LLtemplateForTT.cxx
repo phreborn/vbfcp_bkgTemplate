@@ -163,7 +163,7 @@ double polynomial2(double *x, double *par){
   return par[0]+par[1]*x[0]+par[2]*x[0]*x[0];
 }
 
-void bkgTemplate(){
+void LLtemplateForTT(){
   SetAtlasStyle();
   gStyle->SetOptStat(0);
   gStyle->SetErrorX(0.5);
@@ -171,8 +171,9 @@ void bkgTemplate(){
   TString dirname = "smoothPlots/";
   TString fracfile = "fraction.csv";
 
-  int nBins = 55;
-  int binToMerge = 5;
+// LL for TT
+  int nBins = 11;
+  int binToMerge = 1;
 
   char *cf_cats = (char*)"cats.cfg";
   map<TString, string> catCuts;
@@ -290,7 +291,8 @@ void bkgTemplate(){
     string cat_invID_invIso = "";
     cat_invID_invIso = Form("%s && %s", catCut.data(), invID_invIsoCut.data()); cout<<"cat_invID_invIso: "<<cat_invID_invIso<<endl;
 
-    df_data.Filter(cat_TT).Filter(blindCut).Foreach([&h_data_nom](float m_yy){ h_data_nom->Fill(m_yy/1000); }, {"m_yy"});
+// LL for TT
+    df_data.Filter(Form("%s && %s", "cat_BDTggH_BDTyy==0 && oo1>0 && oo1<1", TTCut.data())).Filter(blindCut).Foreach([&h_data_nom](float m_yy){ h_data_nom->Fill(m_yy/1000); }, {"m_yy"});
     TH1F * oh_data_nom = (TH1F*) h_data_nom->Clone("odata_nom");
 
     df_data.Filter(cat_invID).Foreach([&h_data_invID](float m_yy){ h_data_invID->Fill(m_yy/1000); }, {"m_yy"});
@@ -447,6 +449,10 @@ void bkgTemplate(){
       //cout<<"WARNING!!! can't get fraction of bin: "<<bin.first<<endl;
       cout<<"WARNING!!! can't get fraction of cat: "<<cat.first<<endl;
     }
+
+// LL for TT
+    frac_yy = 0.75602;
+    uncer = 0.162158;
 
     cout<<"yy fraction from 2x2D sideband: "<<frac_yy<<" +- "<<uncer<<endl;
 

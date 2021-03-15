@@ -91,8 +91,8 @@ void ratioPlot(){
   
      TH1F *h3 = (TH1F*)h1->Clone("h3");
      h3->SetLineColor(kBlack);
-     h3->SetMinimum(0.5);  // Define Y ..
-     h3->SetMaximum(1.5); // .. range
+     h3->SetMinimum(-0.5);  // Define Y ..
+     h3->SetMaximum(4.5); // .. range
      h3->Sumw2();
      h3->SetStats(0);      // No statistics on lower plot
      h3->Divide(h2_noErr);

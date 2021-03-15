@@ -4,3 +4,6 @@ TTSel: isPassed
 
 invID: ((!passPID_y1&&passPID_y2)||(passPID_y1&&!passPID_y2))&&passIso
 invID_invIso: ((!passPID_y1&&!passIso_y1 && passPID_y2&&passIso_y2) || (!passPID_y2&&!passIso_y2 && passPID_y1&&passIso_y1))
+
+#invID_invIso: ((!passPID_y1&&!passIso_y1) || (!passPID_y2&&!passIso_y2))
+#invID_invIso: (!passPID || !passIso)
