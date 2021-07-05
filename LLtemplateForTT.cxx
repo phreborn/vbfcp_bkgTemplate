@@ -1,6 +1,6 @@
 #ifdef __CLING__
-#include "/scratchfs/atlas/chenhr/atlaswork/ATLAS_style/atlasrootstyle/AtlasLabels.C"
-#include "/scratchfs/atlas/chenhr/atlaswork/ATLAS_style/atlasrootstyle/AtlasUtils.C"
+#include "/scratchfs/atlas/huirun/atlaswork/ATLAS_style/atlasrootstyle/AtlasLabels.C"
+#include "/scratchfs/atlas/huirun/atlaswork/ATLAS_style/atlasrootstyle/AtlasUtils.C"
 #endif
 
 #include "utils.h"
