@@ -1,0 +1,5 @@
+cat nbin mergeNbin CRbin GPRbin GPR
+TT 55 5 11 55 N
+TL 55 2 22 55 Y
+LT 55 1 55 55 Y
+LL 110 1 110 110 Y

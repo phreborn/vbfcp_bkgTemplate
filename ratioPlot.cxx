@@ -51,12 +51,13 @@ void ratioPlot(){
      TCanvas *c = new TCanvas("c", "canvas", 800, 800);
   
      TPad *pad1 = new TPad("pad1", "pad1", 0, 0.3, 1, 1.0);
-     pad1->SetBottomMargin(0); // Upper and lower plot are joined
+     pad1->SetBottomMargin(0.02); // Upper and lower plot are joined
      pad1->SetGridx();         // Vertical grid
      pad1->Draw();             // Draw the upper pad: pad1
      pad1->cd();               // pad1 becomes the current pad
      h1->SetStats(0);          // No statistics on upper plot
      h1->SetMinimum(0.);
+     h1->GetXaxis()->SetLabelSize(0);
      h1->Draw("ep");               // Draw h1
      h2->Draw("same hist");         // Draw h2 on top of h1
   
@@ -118,7 +119,7 @@ void ratioPlot(){
   
      h3->SetTitle(""); // Remove the ratio title
   
-     h3->GetYaxis()->SetTitle("#gamma#gamma fraction");
+     h3->GetYaxis()->SetTitle("Data/Template");
      h3->GetYaxis()->SetNdivisions(505);
      h3->GetYaxis()->SetTitleSize(20);
      h3->GetYaxis()->SetTitleFont(43);
@@ -126,13 +127,13 @@ void ratioPlot(){
      h3->GetYaxis()->SetLabelFont(43); // Absolute font size in pixel (precision 3)
      h3->GetYaxis()->SetLabelSize(15);
   
-     h3->GetXaxis()->SetTitle("m_#gamma#gamma/GeV");
+     h3->GetXaxis()->SetTitle("m_{#gamma#gamma}/GeV");
      h3->GetXaxis()->SetTitleSize(20);
      h3->GetXaxis()->SetTitleFont(43);
-     h3->GetXaxis()->SetTitleOffset(4.);
+     h3->GetXaxis()->SetTitleOffset(3.);
      h3->GetXaxis()->SetLabelFont(43); // Absolute font size in pixel (precision 3)
      h3->GetXaxis()->SetLabelSize(15);
-  
+
      //c->SaveAs(name+"_"+bin.first+".png");
      c->SaveAs(name+"_"+cat.first+".png");
 
