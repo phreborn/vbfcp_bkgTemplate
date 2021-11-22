@@ -1,5 +1,7 @@
-cat nbin mergeNbin CRbin GPRbin GPR
-TT 55 5 11 55 N
-TL 55 2 22 55 Y
-LT 55 1 55 55 Y
-LL 110 1 110 110 Y
+cat nbin mergeNbin CRbin GPRbin GPR lowerpad
+TT 55 5 11 55 N default
+TL 55 2 22 55 Y default
+LT 55 1 55 55 Y default
+LL 110 1 110 110 Y 0-2
+
+copy template.root to template_${cat}.root after running bkgTemplate.cxx using GPRbin

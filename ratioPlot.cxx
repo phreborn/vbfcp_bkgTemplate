@@ -94,6 +94,8 @@ void ratioPlot(){
      h3->SetLineColor(kBlack);
      h3->SetMinimum(-0.5);  // Define Y ..
      h3->SetMaximum(4.5); // .. range
+     //h3->SetMinimum(0.);  // Define Y ..
+     //h3->SetMaximum(2.); // .. range
      h3->Sumw2();
      h3->SetStats(0);      // No statistics on lower plot
      h3->Divide(h2_noErr);
@@ -136,6 +138,7 @@ void ratioPlot(){
 
      //c->SaveAs(name+"_"+bin.first+".png");
      c->SaveAs(name+"_"+cat.first+".png");
+     c->SaveAs(name+"_"+cat.first+".pdf");
 
      delete lg;
      delete axis;

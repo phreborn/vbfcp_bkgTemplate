@@ -71,6 +71,8 @@ void ratioPlot(TH1F *h1, TH1F *h2, TF1 *func_nom, TF1 *func_alt, TH1F *h4, TStri
    h3->SetLineColor(kBlack);
    h3->SetMinimum(-1.5);  // Define Y ..
    h3->SetMaximum(5.5); // .. range
+   //h3->SetMinimum(0.);  // Define Y ..
+   //h3->SetMaximum(2.); // .. range
    h3->Sumw2();
    h3->SetStats(0);      // No statistics on lower plot
    h3->Divide(h2_noErr);
@@ -139,6 +141,7 @@ void ratioPlot(TH1F *h1, TH1F *h2, TF1 *func_nom, TF1 *func_alt, TH1F *h4, TStri
    h3->GetXaxis()->SetLabelSize(15);
 
    c->SaveAs(name+".png");
+   c->SaveAs(name+".pdf");
 
    delete lg;
    delete axis;
@@ -202,16 +205,16 @@ void bkgTemplate(){
   TChain ch_data("output", "output");
   TChain ch_yy("output", "output");
 
-  ch_data.Add("h026_data.root");
-  ch_yy.Add("h026_364352.diphoton_AF2_slim.root");
+  ch_data.Add("h026_data_v20.root");
+  ch_yy.Add("pre_slim/fullrun2/h026_364352.diphoton_v20_AF2_slim.root");
 
   ROOT::RDataFrame df_data(ch_data, {"m_yy"});
   ROOT::RDataFrame df_yy(ch_yy, {"m_yy"});
 
   //TFile *f_data = new TFile("/scratchfs/bes/chenhr/atlaswork/VBF_CP/ntuples/data17/data17_slim.root","read");
   //TFile *f_yy = new TFile("/scratchfs/bes/chenhr/atlaswork/VBF_CP/ntuples/mc16d/mc16d.364352.diphoton_AF2_slim.root","read");
-  TFile *f_data = new TFile("h026_data.root","read");
-  TFile *f_yy = new TFile("h026_364352.diphoton_AF2_slim.root","read");
+  TFile *f_data = new TFile("h026_data_v20.root","read");
+  TFile *f_yy = new TFile("pre_slim/fullrun2/h026_364352.diphoton_v20_AF2_slim.root","read");
 
   TTree *t_data = (TTree*) f_data->Get("output");
   TTree *t_yy = (TTree*) f_yy->Get("output");
@@ -293,10 +296,10 @@ void bkgTemplate(){
     df_data.Filter(cat_TT).Filter(blindCut).Foreach([&h_data_nom](float m_yy){ h_data_nom->Fill(m_yy/1000); }, {"m_yy"});
     TH1F * oh_data_nom = (TH1F*) h_data_nom->Clone("odata_nom");
 
-    df_data.Filter(cat_invID).Foreach([&h_data_invID](float m_yy){ h_data_invID->Fill(m_yy/1000); }, {"m_yy"});
+    df_data.Filter(cat_invID).Foreach([&h_data_invID](float m_yy, float wRatio){ h_data_invID->Fill(m_yy/1000, wRatio); }, {"m_yy", "wRatio"});
     TH1F * oh_data_invID = (TH1F*) h_data_invID->Clone("odata_invID");
 
-    df_data.Filter(cat_invID_invIso).Foreach([&h_data_invID_invIso](float m_yy){ h_data_invID_invIso->Fill(m_yy/1000); }, {"m_yy"});
+    df_data.Filter(cat_invID_invIso).Foreach([&h_data_invID_invIso](float m_yy, float wRatio){ h_data_invID_invIso->Fill(m_yy/1000, wRatio); }, {"m_yy", "wRatio"});
     TH1F * oh_data_invID_invIso = (TH1F*) h_data_invID_invIso->Clone("odata_invID_invIso");
   
     for (int i = 0; i < n_data; i++){
@@ -327,13 +330,13 @@ void bkgTemplate(){
     // filling MC yy
     int n_yy = t_yy->GetEntries();
 
-    df_yy.Filter(cat_TT).Foreach([&h_yy_nom](float m_yy, float wt){ h_yy_nom->Fill(m_yy/1000, wt); }, {"m_yy", "wt"});
+    df_yy.Filter(cat_TT).Foreach([&h_yy_nom](float m_yy, float wt, float wRatio){ h_yy_nom->Fill(m_yy/1000, wt*wRatio); }, {"m_yy", "wt", "wRatio"});
     TH1F * oh_yy_nom = (TH1F*) h_yy_nom->Clone("oyy_nom");
 
-    df_yy.Filter(cat_invID).Foreach([&h_yy_invID](float m_yy, float wt){ h_yy_invID->Fill(m_yy/1000, wt); }, {"m_yy", "wt"});
+    df_yy.Filter(cat_invID).Foreach([&h_yy_invID](float m_yy, float wt, float wRatio){ h_yy_invID->Fill(m_yy/1000, wt*wRatio); }, {"m_yy", "wt", "wRatio"});
     TH1F * oh_yy_invID = (TH1F*) h_yy_invID->Clone("oyy_invID");
 
-    df_yy.Filter(cat_invID_invIso).Foreach([&h_yy_invID_invIso](float m_yy, float wt){ h_yy_invID_invIso->Fill(m_yy/1000, wt); }, {"m_yy", "wt"}); cout<<"df h_yy_invID_invIso: "<<h_yy_invID_invIso->Integral()<<endl;
+    df_yy.Filter(cat_invID_invIso).Foreach([&h_yy_invID_invIso](float m_yy, float wt, float wRatio){ h_yy_invID_invIso->Fill(m_yy/1000, wt*wRatio); }, {"m_yy", "wt", "wRatio"}); cout<<"df h_yy_invID_invIso: "<<h_yy_invID_invIso->Integral()<<endl;
     TH1F * oh_yy_invID_invIso = (TH1F*) h_yy_invID_invIso->Clone("oyy_invID_invIso");
   
     for(int i = 0; i < n_yy; i++){
